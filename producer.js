@@ -1,6 +1,6 @@
   const amqp = require("amqplib");
 
-  async function sendMail(){
+  async function sendMail(routingKey, message){
     try{
 
         //creating a connection
@@ -10,29 +10,19 @@
         const channel = await connection.createChannel();
 
         //creating an exchange name
-        const exchange = "mail_exchange";
+        const exchange = "notification_exchange";
 
-        //creating a routing_key
-        const routingKey  ="send_mail";
-
-        const message = {
-            to:"anishc381@gmail.com",
-            from:"barcafan830@gmail.com",
-            subject:"Mail Testing",
-            body:"Hello from mail server!!"
-        }
+         //creating an exchange type
+        const exchangeType = "topic"; 
         
          //creating an exchange
-        await channel.assertExchange(exchange, "direct", {durable:false});
-        //creating a queue
-        await channel.assertQueue("mail_queue", {durable: false});
+        await channel.assertExchange(exchange, exchangeType, {durable:true});
 
-        //binding exchange with a queue
-        await channel.bindQueue("mail_queue", exchange, routingKey);
+        //[Note: IN exchange type =topic , we do not make any queue and bind it in producer.js, we handle in consumer.js]
 
         //sending message to queue using exchange and routing key
-        channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)));
-        console.log("Mail data was sent", message);
+        channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)), {persistent:true});
+        console.log("Mail data was sent", routingKey ,JSON.stringify(message));
 
         //closing the connection
         setTimeout(()=>{
@@ -44,4 +34,5 @@
     }
   }
 
-  sendMail();
+  sendMail("order.placed", {orderId: 12345, status:"placed"});
+  sendMail("payment.processed", {paymentId: 67890, status:"processed"});
