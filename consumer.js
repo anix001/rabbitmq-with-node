@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
 
-async function receiveMail(){
+async function consumeMessage(){
  try{
   
         //creating a connection
@@ -10,12 +10,13 @@ async function receiveMail(){
         const channel = await connection.createChannel();
 
         //creating a queue
-        await channel.assertQueue("mail_queue", {durable: false});
+        await channel.assertQueue("lazy_notification_queue", {durable: true, arguments:{"x-queue-mode":"lazy"}});
+        console.log("waiting for message")
 
         //consuming message
-        channel.consume("mail_queue", (message)=>{
+        channel.consume("lazy_notification_queue", (message)=>{
             if(message !== null){
-                console.log("Message Received :", JSON.parse(message.content));
+                console.log("Message Received :", message.content.toString());
 
                 //acknowledge the message
                 channel.ack(message);
@@ -26,4 +27,4 @@ async function receiveMail(){
  }
 }
 
-receiveMail();
+consumeMessage();

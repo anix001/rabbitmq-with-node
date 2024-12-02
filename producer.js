@@ -1,6 +1,6 @@
   const amqp = require("amqplib");
 
-  async function sendMail(){
+  async function setup(message){
     try{
 
         //creating a connection
@@ -10,38 +10,29 @@
         const channel = await connection.createChannel();
 
         //creating an exchange name
-        const exchange = "mail_exchange";
-
+        const exchange = "notificaion_exchange";
+        const queueName ="lazy_notification_queue";
         //creating a routing_key
-        const routingKey  ="send_mail";
-
-        const message = {
-            to:"anishc381@gmail.com",
-            from:"barcafan830@gmail.com",
-            subject:"Mail Testing",
-            body:"Hello from mail server!!"
-        }
+        const routingKey  ="notification.key";
         
          //creating an exchange
-        await channel.assertExchange(exchange, "direct", {durable:false});
+        await channel.assertExchange(exchange, "direct", {durable:true});
         //creating a queue
-        await channel.assertQueue("mail_queue", {durable: false});
+        await channel.assertQueue(queueName, {durable: true, arguments:{"x-queue-mode":"lazy"}}); // to define it is a lazy queue
 
         //binding exchange with a queue
-        await channel.bindQueue("mail_queue", exchange, routingKey);
+        await channel.bindQueue(queueName, exchange, routingKey);
 
         //sending message to queue using exchange and routing key
-        channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)));
+        channel.publish(exchange, routingKey, Buffer.from(message), {persistent : true});
         console.log("Mail data was sent", message);
 
-        //closing the connection
-        setTimeout(()=>{
-            connection.close();
-        },500)
+        await channel.close();
+        await connection.close();
 
     }catch(err){
       console.log("Error", err);
     }
   }
 
-  sendMail();
+  setup('hello i am anix');
