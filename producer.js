@@ -1,47 +1,42 @@
-  const amqp = require("amqplib");
+const amqp = require("amqplib");
 
-  async function sendMail(){
-    try{
+async function sendNotification(headers, message){
+  try{
 
-        //creating a connection
-        const connection = await amqp.connect("amqp://localhost");
+      //creating a connection
+      const connection = await amqp.connect("amqp://localhost");
 
-        //creating a channel
-        const channel = await connection.createChannel();
+      //creating a channel
+      const channel = await connection.createChannel();
 
-        //creating an exchange name
-        const exchange = "mail_exchange";
+      //creating an exchange name
+      const exchange = "header_exchange";
 
-        //creating a routing_key
-        const routingKey  ="send_mail";
+       //creating an exchange type
+      const exchangeType = "headers"; 
+      
+       //creating an exchange
+      await channel.assertExchange(exchange, exchangeType, {durable:true});
 
-        const message = {
-            to:"anishc381@gmail.com",
-            from:"barcafan830@gmail.com",
-            subject:"Mail Testing",
-            body:"Hello from mail server!!"
-        }
-        
-         //creating an exchange
-        await channel.assertExchange(exchange, "direct", {durable:false});
-        //creating a queue
-        await channel.assertQueue("mail_queue", {durable: false});
+      //[Note: IN exchange type =headers , we do not make any queue and bind it in producer.js, we handle in consumer.js and we place " " in place of routingKey]
 
-        //binding exchange with a queue
-        await channel.bindQueue("mail_queue", exchange, routingKey);
+      //sending message to queue using exchange and routing key
+      channel.publish(exchange, "", Buffer.from(message), {persistent:true, headers});
+      console.log("Notification data was sent " ,message);
 
-        //sending message to queue using exchange and routing key
-        channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)));
-        console.log("Mail data was sent", message);
+      //closing the connection
+      setTimeout(()=>{
+          connection.close();
+      },500)
 
-        //closing the connection
-        setTimeout(()=>{
-            connection.close();
-        },500)
-
-    }catch(err){
-      console.log("Error", err);
-    }
+  }catch(err){
+    console.log("Error", err);
   }
+}
 
-  sendMail();
+sendNotification({"x-match":"all", "notification-type":"new_video", "content-type": "video"}, "New  music video uploaded");
+sendNotification({"x-match":"all", "notification-type":"live_stream", "content-type": "gaming"}, "Gaming live stream started");
+sendNotification({"x-match":"any", "notification-type-comment":"comment", "content-type": "vlog"}, "New comment on vlog");
+sendNotification({"x-match":"any", "notification-type-like":"like", "content-type": "vlog"}, "New like on vlog");
+
+//[x-match = any is or x-match= all is and]
