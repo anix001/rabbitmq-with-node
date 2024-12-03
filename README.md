@@ -1,4 +1,6 @@
 # rabbitmq-with-node
+
+## To build docker file
 `
-docker run -d --name rabbitmq -p 15672:15672 -p 5672:5672 rabbitmq:management
+docker-compose up --build
 `
