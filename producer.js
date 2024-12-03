@@ -12,7 +12,7 @@
         const exchange = "delayed_exchange";     
         const routingKey ="delayed_key";  
          //creating an exchange
-        await channel.assertExchange(exchange, "x-delayed-messagge", {durable:true, arguments:{'x-delayed-type':'direct'}});
+        await channel.assertExchange(exchange, "x-delayed-message", {durable:true, arguments:{'x-delayed-type':'direct'}});
 
         const message = 'Hello, Delayed Queue!';
         const delay = 5000; // Delay in milliseconds (5 seconds)
